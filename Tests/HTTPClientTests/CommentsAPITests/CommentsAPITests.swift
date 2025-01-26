@@ -14,8 +14,7 @@ final class CommentsAPITests: XCTestCase {
     }
     
     func testResponseSuccess() async throws {
-        let response: CommentsResponse = try await sut.hit(restRequest: CommentHTTPRequest.all)
-        print(response.total)
+        let _: CommentsResponse = try await sut.hit(restRequest: CommentHTTPRequest.all)
     }
     
     func testDeleteSuccess() async throws {
@@ -23,8 +22,12 @@ final class CommentsAPITests: XCTestCase {
     }
     
     func testAddSuccess() async throws {
-        let comment = CommentAddBody(body: "This is awesome", postId: 3, userId: 5)
+        let body = "This is awesome", postId = 3, userId = 5
+        let comment = CommentAddBody(body: body, postId: postId, userId: userId)
         let response: Comment = try await sut.hit(restRequest: CommentHTTPRequest.add(body: comment))
-        print(response)
+        
+        XCTAssertEqual(response.body, body)
+        XCTAssertEqual(response.postId, postId)
+        XCTAssertEqual(response.user.id, userId)
     }
 }

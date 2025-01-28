@@ -22,7 +22,8 @@ let package = Package(
             name: "HTTPClient"),
         .testTarget(
             name: "HTTPClientTests",
-            dependencies: ["HTTPClient"]
+            dependencies: ["HTTPClient"],
+            resources: [.copy("Resources/StreetVendorWithFlowers.jpg")]
         ),
     ]
 )

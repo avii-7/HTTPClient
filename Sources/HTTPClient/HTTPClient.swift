@@ -8,35 +8,51 @@ public class HTTPClient {
         self.urlSession = urlSession
     }
     
-    public func hit<T: Decodable>(restRequest: HTTPRequest) async throws(NetworkError) -> T {
+    public func hit<T: Decodable>(httpRequest: HTTPRequest) async throws(NetworkError) -> T {
         
-        let request = try prepareURLRequest(from: restRequest)
+        let urlRequest = try prepareURLRequest(from: httpRequest)
         
         let (data, response): (Data, URLResponse)
         
         do {
-            (data, response) = try await urlSession.data(for: request)
+            (data, response) = try await urlSession.data(for: urlRequest)
         }
         catch {
             throw handleError(error)
         }
-        try handleResponse(response, data: data, urlRequest: request)
+        try handleResponse(response, data: data, urlRequest: urlRequest)
         return try decodeResponse(data: data)
     }
     
-    public func hit(restRequest: HTTPRequest) async throws(NetworkError) {
+    public func hit(httpRequest: HTTPRequest) async throws(NetworkError) {
         
-        let request = try prepareURLRequest(from: restRequest)
+        let urlRequest = try prepareURLRequest(from: httpRequest)
         
         let (data, response): (Data, URLResponse)
         
         do {
-            (data, response) = try await urlSession.data(for: request)
+            (data, response) = try await urlSession.data(for: urlRequest)
         }
         catch {
             throw handleError(error)
         }
-        try handleResponse(response, data: data, urlRequest: request)
+        try handleResponse(response, data: data, urlRequest: urlRequest)
+    }
+    
+    public func hitMultipart<T: Decodable>(httpRequest: HTTPRequest, multipartFormData: MultipartFormData) async throws(NetworkError) -> T {
+        
+        let urlRequest = try prepareMultiPartURLRequest(httpRequest: httpRequest, multipartFormData: multipartFormData)
+        
+        let (data, response): (Data, URLResponse)
+        
+        do {
+            (data, response) = try await urlSession.data(for: urlRequest)
+        }
+        catch {
+            throw handleError(error)
+        }
+        try handleResponse(response, data: data, urlRequest: urlRequest)
+        return try decodeResponse(data: data)
     }
 }
 
@@ -76,6 +92,34 @@ extension HTTPClient {
         catch {
             throw .bodyEncodingError(description: error.localizedDescription)
         }
+    }
+    
+    private func prepareMultiPartURLRequest(httpRequest: HTTPRequest, multipartFormData: MultipartFormData) throws(NetworkError) -> URLRequest {
+        let completeURL: URL?
+
+        if #available(iOS 16.0, macOS 13, *)  {
+            var url = httpRequest.baseURL.appending(path: httpRequest.endPoint)
+            if let queryParams = httpRequest.queryParams {
+                url = url.appending(queryItems: queryParams)
+            }
+            completeURL = url
+        } else {
+            let url = httpRequest.baseURL.appendingPathComponent(httpRequest.endPoint, isDirectory: false)
+            var urlComponents = URLComponents(url: url, resolvingAgainstBaseURL: true)
+            urlComponents?.queryItems = httpRequest.queryParams
+            completeURL = urlComponents?.url
+        }
+        
+        guard let completeURL else {
+            throw .badURL
+        }
+        
+        var urlRequest = URLRequest(url: completeURL)
+        urlRequest.httpMethod = httpRequest.httpMethod.rawValue
+        urlRequest.addValue("multipart/form-data; boundary=\(multipartFormData.boundary)", forHTTPHeaderField: "Content-Type")
+        urlRequest.httpBody = multipartFormData.postBody
+        
+        return urlRequest
     }
     
     private func handleResponse(_ response: URLResponse, data: Data, urlRequest: URLRequest) throws(NetworkError) {

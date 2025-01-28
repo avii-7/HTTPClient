@@ -1,5 +1,5 @@
 //
-//  File.swift
+//  MultipartFormData.swift
 //  HTTPClient
 //
 //  Created by Arun on 26/01/25.
@@ -9,18 +9,11 @@ import Foundation
 
 public struct MultipartFormData {
     
-    private let uniqueString: String
-    
-    public let boundary: String
+    public let boundary = UUID().uuidString
     
     private var formData = Data()
     
     private let contentDispositionFormData = "Content-Disposition: form-data;"
-    
-    init() {
-        self.uniqueString = UUID().uuidString
-        self.boundary = "--\(uniqueString)"
-    }
     
     var postBody: Data {
         var postBody = formData
@@ -30,7 +23,7 @@ public struct MultipartFormData {
    
     /// for key value data
     public mutating func addField(name: String, value: String) {
-        formData.addField(boundary)
+        formData.addField("--\(boundary)")
         formData.addField("\(contentDispositionFormData) name=\"\(name)\"")
         formData.addNewLine()
         formData.addField(value)
@@ -38,23 +31,21 @@ public struct MultipartFormData {
     
     /// For file upload
     public mutating func addField(name: String, fileName: String, contentType: String, data: Data) {
-        formData.addField(boundary)
-        formData.addField("\(contentDispositionFormData) name=\"\(name)\"; fileName=\"\(fileName)\"")
-        formData.addNewLine()
+        formData.addField("--\(boundary)")
+        formData.addField("\(contentDispositionFormData) name=\"\(name)\"; filename=\"\(fileName)\"")
         formData.addField("Content-Type: \(contentType)")
         formData.addNewLine()
         formData.addField(data)
     }
     
     /// For JSON
-    public mutating func addField(name: String, encodableData: Encodable) throws {
-        formData.addField(boundary)
+    public mutating func addField(name: String, encodableData: Encodable, jsonEncoder: JSONEncoder = JSONEncoder()) throws {
+        formData.addField("--\(boundary)")
         formData.addField("\(contentDispositionFormData) name=\"\(name)\"")
-        formData.addNewLine()
         formData.addField("Content-Type: application/json")
         formData.addNewLine()
         
-        let data = try JSONEncoder().encode(encodableData)
+        let data = try jsonEncoder.encode(encodableData)
         formData.addField(data)
     }
 }

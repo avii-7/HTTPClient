@@ -24,15 +24,22 @@ final class MultipartAPITests: XCTestCase {
     func testUploadTest() async throws {
         if let resourceURL = Bundle.module.url(forResource: "StreetVendorWithFlowers", withExtension: "jpg") {
             let data = try Data(contentsOf: resourceURL)
+            
             var multipartFormData = MultipartFormData()
             multipartFormData.addField(
                 name: "file",
-                fileName: "StreetVendorWithFlowers.jpg",
+                fileName: resourceURL.lastPathComponent,
                 contentType: "image/jpeg",
                 data: data
             )
-            let resposne: MultipartAPIResponse = try await sut.hitMultipart(httpRequest: MultipartHTTPRequest.uploadFile, multipartFormData: multipartFormData)
-            print(resposne)
+            let multipartResponse: MultipartAPIResponse = try await sut.hitMultipart(httpRequest: MultipartHTTPRequest.uploadFile, multipartFormData: multipartFormData)
+            
+            XCTAssertEqual(multipartResponse.originalname, resourceURL.lastPathComponent)
+            XCTAssertFalse(multipartResponse.filename.isEmpty)
+
+            if URL(string: multipartResponse.location) == nil {
+                XCTFail("URL should not be nil")
+            }
         }
         else {
             XCTFail("Resource file cannot found.")

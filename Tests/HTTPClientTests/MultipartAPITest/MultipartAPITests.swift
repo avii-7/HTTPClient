@@ -32,7 +32,7 @@ final class MultipartAPITests: XCTestCase {
                 contentType: "image/jpeg",
                 data: data
             )
-            let multipartResponse: MultipartAPIResponse = try await sut.hitMultipart(httpRequest: MultipartHTTPRequest.uploadFile, multipartFormData: multipartFormData)
+            let multipartResponse: MultipartAPIResponse = try await sut.execute(httpRequest: MultipartHTTPRequest.uploadFile, multipartFormData: multipartFormData)
             
             XCTAssertEqual(multipartResponse.originalname, resourceURL.lastPathComponent)
             XCTAssertFalse(multipartResponse.filename.isEmpty)

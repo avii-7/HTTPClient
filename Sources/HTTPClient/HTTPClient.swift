@@ -8,41 +8,28 @@ public class HTTPClient {
         self.urlSession = urlSession
     }
     
-    public func hit<T: Decodable>(httpRequest: HTTPRequest) async throws(NetworkError) -> T {
-        
+    /// Executes an HTTP request and decodes the response into a specified `Decodable` type.
+    public func execute<T: Decodable>(httpRequest: HTTPRequest) async throws(NetworkError) -> T {
         let urlRequest = try prepareURLRequest(from: httpRequest)
-        
-        let (data, response): (Data, URLResponse)
-        
-        do {
-            (data, response) = try await urlSession.data(for: urlRequest)
-        }
-        catch {
-            throw handleError(error)
-        }
-        try handleResponse(response, data: data, urlRequest: urlRequest)
-        return try decodeResponse(data: data)
+        let data = try await hit(urlRequest: urlRequest)
+        return try decodeResponse(data: data, decoder: httpRequest.decoder ?? JSONDecoder())
     }
     
-    public func hit(httpRequest: HTTPRequest) async throws(NetworkError) {
-        
+    /// Executes an HTTP request without expecting a response body.
+    public func execute(httpRequest: HTTPRequest) async throws(NetworkError) {
         let urlRequest = try prepareURLRequest(from: httpRequest)
-        
-        let (data, response): (Data, URLResponse)
-        
-        do {
-            (data, response) = try await urlSession.data(for: urlRequest)
-        }
-        catch {
-            throw handleError(error)
-        }
-        try handleResponse(response, data: data, urlRequest: urlRequest)
+        try await hit(urlRequest: urlRequest)
     }
-    
-    public func hitMultipart<T: Decodable>(httpRequest: HTTPRequest, multipartFormData: MultipartFormData) async throws(NetworkError) -> T {
-        
+
+    /// Executes a multipart HTTP request and decodes the response.
+    public func execute<T: Decodable>(httpRequest: HTTPRequest, multipartFormData: MultipartFormData) async throws(NetworkError) -> T {
         let urlRequest = try prepareMultiPartURLRequest(httpRequest: httpRequest, multipartFormData: multipartFormData)
-        
+        let data = try await hit(urlRequest: urlRequest)
+        return try decodeResponse(data: data, decoder: httpRequest.decoder ?? JSONDecoder())
+    }
+    
+    @discardableResult
+    private func hit(urlRequest: URLRequest) async throws(NetworkError) -> Data {
         let (data, response): (Data, URLResponse)
         
         do {
@@ -51,108 +38,23 @@ public class HTTPClient {
         catch {
             throw handleError(error)
         }
+        
         try handleResponse(response, data: data, urlRequest: urlRequest)
-        return try decodeResponse(data: data)
+        return data
     }
 }
 
 extension HTTPClient {
     
-    private func prepareURLRequest(from request: HTTPRequest) throws(NetworkError) -> URLRequest {
-        
-        let completeURL: URL?
-
-        if #available(iOS 16.0, macOS 13, *)  {
-            var url = request.baseURL.appending(path: request.endPoint)
-            if let queryParams = request.queryParams {
-                url = url.appending(queryItems: queryParams)
-            }
-            completeURL = url
-        } else {
-            let url = request.baseURL.appendingPathComponent(request.endPoint, isDirectory: false)
-            var urlComponents = URLComponents(url: url, resolvingAgainstBaseURL: true)
-            urlComponents?.queryItems = request.queryParams
-            completeURL = urlComponents?.url
-        }
-        
-        guard let completeURL else {
-            throw .badURL
-        }
-        
-        var urlRequest = URLRequest(url: completeURL)
-        urlRequest.httpMethod = request.httpMethod.rawValue
-        urlRequest.allHTTPHeaderFields = request.headers
-        
-        do {
-            if let body = request.body {
-                urlRequest.httpBody = try JSONEncoder().encode(body)
-            }
-            return urlRequest
-        }
-        catch {
-            throw .bodyEncodingError(description: error.localizedDescription)
-        }
-    }
-    
-    private func prepareMultiPartURLRequest(httpRequest: HTTPRequest, multipartFormData: MultipartFormData) throws(NetworkError) -> URLRequest {
-        let completeURL: URL?
-
-        if #available(iOS 16.0, macOS 13, *)  {
-            var url = httpRequest.baseURL.appending(path: httpRequest.endPoint)
-            if let queryParams = httpRequest.queryParams {
-                url = url.appending(queryItems: queryParams)
-            }
-            completeURL = url
-        } else {
-            let url = httpRequest.baseURL.appendingPathComponent(httpRequest.endPoint, isDirectory: false)
-            var urlComponents = URLComponents(url: url, resolvingAgainstBaseURL: true)
-            urlComponents?.queryItems = httpRequest.queryParams
-            completeURL = urlComponents?.url
-        }
-        
-        guard let completeURL else {
-            throw .badURL
-        }
-        
-        var urlRequest = URLRequest(url: completeURL)
-        urlRequest.httpMethod = httpRequest.httpMethod.rawValue
-        urlRequest.addValue("multipart/form-data; boundary=\(multipartFormData.boundary)", forHTTPHeaderField: "Content-Type")
-        urlRequest.httpBody = multipartFormData.postBody
-        
-        return urlRequest
-    }
-    
-    private func handleResponse(_ response: URLResponse, data: Data, urlRequest: URLRequest) throws(NetworkError) {
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw NetworkError.serverUnreachable
-        }
-        
-        if 200...299 ~= httpResponse.statusCode {
-            return
-        }
-        else {
-            logDetails(urlRequest: urlRequest, responseData: data, httpResponse: httpResponse)
-            try handleHTTPResponseError(httpResponse)
-        }
-    }
-    
-    private func handleHTTPResponseError(_ httpResponse: HTTPURLResponse) throws(NetworkError) {
-        if 500...599 ~= httpResponse.statusCode {
-            throw NetworkError.serverError(statusCode: httpResponse.statusCode)
-        } else if httpResponse.statusCode == 429 {
-            throw NetworkError.rateLimited
-        } else {
-            throw NetworkError.serverError(statusCode: httpResponse.statusCode)
-        }
-    }
-    
-    private func decodeResponse<T: Decodable>(data: Data) throws(NetworkError) -> T {
+    /// Decodes the response using the decoder provided in the request,
+    /// or creates a new one if none is found.
+    private func decodeResponse<T: Decodable>(data: Data, decoder: JSONDecoder) throws(NetworkError) -> T {
         do {
             if String.self == T.self {
                 return String(decoding: data, as: UTF8.self) as! T
             }
             else {
-                return try JSONDecoder().decode(T.self, from: data)
+                return try decoder.decode(T.self, from: data)
             }
         }
         catch {
@@ -174,17 +76,5 @@ extension HTTPClient {
             }
         }
         return .requestFailed(error: error)
-    }
-    
-    private func logDetails(urlRequest: URLRequest, responseData: Data, httpResponse: HTTPURLResponse) {
-        print("URL: \(urlRequest.url?.absoluteString ?? "Unknown URL")")
-        print("HTTP Method: \(urlRequest.httpMethod ?? "Unknown Method")")
-        print("Status Code: \(httpResponse.statusCode)")
-        if let requestBody = urlRequest.httpBody {
-            let requestBodyString = String(data: requestBody, encoding: .utf8) ?? "Could not decode request body"
-            print("Request Body: \(requestBodyString)")
-        }
-        let responseBody = String(data: responseData, encoding: .utf8) ?? "Could not decode response"
-        print("Response Body: \(responseBody)")
     }
 }

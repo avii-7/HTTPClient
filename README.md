@@ -63,9 +63,11 @@ enum CommentHTTPRequest: HTTPRequest {
 
 ```swift
 let httpClient = HTTPClient()
-let allCommentsResponse: CommentsResponse = try await httpClient.hit(httpRequest: CommentHTTPRequest.all)
-try await httpClient.hit(httpRequest: CommentHTTPRequest.delete(commnetId: 1))
+let allCommentsResponse: CommentsResponse = try await httpClient.execute(httpRequest: CommentHTTPRequest.all)
+try await httpClient.execute(httpRequest: CommentHTTPRequest.delete(commnetId: 1))
 ```
+
+You can also refer tests for examples.
 
 ## Contributing  
 

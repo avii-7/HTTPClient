@@ -36,7 +36,7 @@ extension HTTPClient {
         
         do {
             if let body = request.body {
-                var encoder = request.encoder ?? JSONEncoder()
+                let encoder = request.encoder ?? JSONEncoder()
                 urlRequest.httpBody = try encoder.encode(body)
             }
             return urlRequest

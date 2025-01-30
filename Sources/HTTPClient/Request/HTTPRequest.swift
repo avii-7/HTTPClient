@@ -20,6 +20,10 @@ public protocol HTTPRequest {
     var baseURL: URL { get }
     
     var queryParams: [URLQueryItem]? { get }
+    
+    var encoder: JSONEncoder? { get }
+    
+    var decoder: JSONDecoder? { get }
 }
 
 public extension HTTPRequest {
@@ -29,4 +33,8 @@ public extension HTTPRequest {
     var queryParams: [URLQueryItem]? { nil }
     
     var headers: [String: String]? { ["Content-Type": "application/json"] }
+    
+    var encoder: JSONEncoder? { JSONEncoder() }
+    
+    var decoder: JSONDecoder? { JSONDecoder() }
 }

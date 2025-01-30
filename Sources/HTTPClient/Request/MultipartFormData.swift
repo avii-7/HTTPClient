@@ -7,6 +7,7 @@
 
 import Foundation
 
+/// A helper struct for constructing multipart form data requests.
 public struct MultipartFormData {
     
     public let boundary = UUID().uuidString
@@ -15,13 +16,18 @@ public struct MultipartFormData {
     
     private let contentDispositionFormData = "Content-Disposition: form-data;"
     
+    /// The complete multipart form data body to be used in the request.
     var postBody: Data {
         var postBody = formData
         postBody.addField("--\(boundary)--")
         return postBody
     }
    
-    /// for key value data
+    /// Adds a key-value pair as form data.
+        ///
+        /// - Parameters:
+        ///   - name: The field name.
+        ///   - value: The field value as a string.
     public mutating func addField(name: String, value: String) {
         formData.addField("--\(boundary)")
         formData.addField("\(contentDispositionFormData) name=\"\(name)\"")
@@ -29,7 +35,13 @@ public struct MultipartFormData {
         formData.addField(value)
     }
     
-    /// For file upload
+    /// Adds a file field to the form data.
+       ///
+       /// - Parameters:
+       ///   - name: The field name.
+       ///   - fileName: The name of the file.
+       ///   - contentType: The MIME type of the file.
+       ///   - data: The file data.
     public mutating func addField(name: String, fileName: String, contentType: String, data: Data) {
         formData.addField("--\(boundary)")
         formData.addField("\(contentDispositionFormData) name=\"\(name)\"; filename=\"\(fileName)\"")
@@ -38,7 +50,13 @@ public struct MultipartFormData {
         formData.addField(data)
     }
     
-    /// For JSON
+    /// Adds a JSON-encoded object as form data.
+        ///
+        /// - Parameters:
+        ///   - name: The field name.
+        ///   - encodableData: The encodable object.
+        ///   - jsonEncoder: The `JSONEncoder` to use (default is `JSONEncoder()`).
+        /// - Throws: An error if encoding fails.
     public mutating func addField(name: String, encodableData: Encodable, jsonEncoder: JSONEncoder = JSONEncoder()) throws {
         formData.addField("--\(boundary)")
         formData.addField("\(contentDispositionFormData) name=\"\(name)\"")

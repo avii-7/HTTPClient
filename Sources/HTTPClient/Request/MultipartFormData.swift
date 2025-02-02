@@ -35,35 +35,26 @@ public struct MultipartFormData {
         formData.addField(value)
     }
     
-    /// Adds a file field to the form data.
+    /// Use this method to add a dicrete type or unknown type data as form data.
+       ///
+       /// This method can be used to add JSON, image, video and font data etc. Must specify the exact mimeType (ContentType for JSON) for correctly recognize the data.
+       ///
+       /// Use `application/octet-stream` if the true type of data is unknown.
        ///
        /// - Parameters:
        ///   - name: The field name.
        ///   - fileName: The name of the file.
-       ///   - contentType: The MIME type of the file.
-       ///   - data: The file data.
-    public mutating func addField(name: String, fileName: String, contentType: String, data: Data) {
+       ///   - mimeType: The MIME type of the file.
+       ///   - data: The data to add.
+    public mutating func addField(name: String, fileName: String? = nil, mimeType: String, data: Data) {
         formData.addField("--\(boundary)")
-        formData.addField("\(contentDispositionFormData) name=\"\(name)\"; filename=\"\(fileName)\"")
-        formData.addField("Content-Type: \(contentType)")
+        var field = "\(contentDispositionFormData) name=\"\(name)\";"
+        if let fileName {
+            field.append(" filename=\"\(fileName)\"")
+        }
+        formData.addField(field)
+        formData.addField("Content-Type: \(mimeType)")
         formData.addNewLine()
-        formData.addField(data)
-    }
-    
-    /// Adds a JSON-encoded object as form data.
-        ///
-        /// - Parameters:
-        ///   - name: The field name.
-        ///   - encodableData: The encodable object.
-        ///   - jsonEncoder: The `JSONEncoder` to use (default is `JSONEncoder()`).
-        /// - Throws: An error if encoding fails.
-    public mutating func addField(name: String, encodableData: Encodable, jsonEncoder: JSONEncoder = JSONEncoder()) throws {
-        formData.addField("--\(boundary)")
-        formData.addField("\(contentDispositionFormData) name=\"\(name)\"")
-        formData.addField("Content-Type: application/json")
-        formData.addNewLine()
-        
-        let data = try jsonEncoder.encode(encodableData)
         formData.addField(data)
     }
 }

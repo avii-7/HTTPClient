@@ -7,6 +7,9 @@ public enum HTTPMethod: String {
     case delete = "DELETE"
 }
 
+/// An enum representing an HTTP request.
+///
+/// For multipart requests, you don't need to include body, headers and encoder.
 public protocol HTTPRequest {
     
     var endPoint: String { get }

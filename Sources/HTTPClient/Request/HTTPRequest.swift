@@ -9,7 +9,7 @@ public enum HTTPMethod: String {
 
 /// An enum representing an HTTP request.
 ///
-/// For multipart requests, you do not need to include body, headers and encoder. It will be ignore.
+/// For multipart requests, you don't need to include body, headers and encoder.
 public protocol HTTPRequest {
     
     var endPoint: String { get }

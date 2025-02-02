@@ -29,7 +29,7 @@ final class MultipartAPITests: XCTestCase {
             multipartFormData.addField(
                 name: "file",
                 fileName: resourceURL.lastPathComponent,
-                contentType: "image/jpeg",
+                mimeType: "image/jpeg",
                 data: data
             )
             let multipartResponse: MultipartAPIResponse = try await sut.execute(httpRequest: MultipartHTTPRequest.uploadFile, multipartFormData: multipartFormData)

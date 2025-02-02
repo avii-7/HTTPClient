@@ -1,16 +1,19 @@
 # HTTPClient  
 
-**HTTPClient** is a Swift package designed to simplify making HTTP requests. It provides a quick way to manage a group of HTTP API requests in your Swift applications.  
+**HTTPClient** is a Swift package designed to simplify making HTTP requests. It provides a quick way to manage a group of HTTP API requests in your Swift applications.
 
 ## Components  
 
 1. **HTTPRequest**:  
-   A protocol that you implement to define the URLs, HTTP methods, request body, headers, etc. Use an `enum` to represent a group of APIs, with each case corresponding to a specific endpoint. Customize the request details for each case accordingly.  
+   A protocol that you implement to define the URLs, HTTP methods, request body, headers, encoders, decoders etc. Use an `enum` to represent a group of APIs, with each case corresponding to a specific endpoint. Customize the request details for each case accordingly.
 
-2. **HTTPClient**:  
+2. **MultipartFormData**:
+   A struct used to create a multipart request. Use the overloaded `addField` methods to create a document.
+
+3. **HTTPClient**:  
    A client class that interacts with `URLSession` to execute requests. Its methods accept a type conforming to the `HTTPRequest` protocol, extract the necessary details from this protocol, and create a `URLRequest` for making HTTP calls.  
 
-3. **NetworkError**:  
+4. **NetworkError**:  
    Starting from Swift 6.0, Swift allows you to throw specific errors instead of the generic `Error`. `NetworkError` is the specific error thrown by all the methods in `HTTPClient`. This feature enables consumers to handle errors more precisely and take actions based on the type of error encountered.  
 
 ## Usage  

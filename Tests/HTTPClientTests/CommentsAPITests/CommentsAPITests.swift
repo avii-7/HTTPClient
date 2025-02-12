@@ -19,7 +19,7 @@ final class CommentsAPITests: XCTestCase {
     }
     
     func testDeleteSuccess() async throws {
-        try await sut.execute(httpRequest: CommentHTTPRequest.delete(commnetId: 1))
+        try await sut.executeVoid(httpRequest: CommentHTTPRequest.delete(commnetId: 1))
     }
     
     func testAddSuccess() async throws {

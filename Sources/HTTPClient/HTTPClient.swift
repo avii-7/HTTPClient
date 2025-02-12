@@ -16,7 +16,7 @@ public class HTTPClient {
     }
     
     /// Executes an HTTP request without expecting a response body.
-    public func execute(httpRequest: HTTPRequest) async throws(NetworkError) {
+    public func executeVoid(httpRequest: HTTPRequest) async throws(NetworkError) {
         let urlRequest = try prepareURLRequest(from: httpRequest)
         try await hit(urlRequest: urlRequest)
     }

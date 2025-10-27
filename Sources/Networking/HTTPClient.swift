@@ -1,6 +1,6 @@
 import Foundation
 
-public class HTTPClient {
+public final class HTTPClient: Sendable {
     
     public static let `default`: URLSession = {
         let config = URLSessionConfiguration.default

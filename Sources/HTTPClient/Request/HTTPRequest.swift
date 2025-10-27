@@ -1,5 +1,51 @@
 import Foundation
 
+public protocol UrlencodeCodingKeys: CaseIterable, CodingKey {
+    
+    var key: String { get }
+}
+
+public protocol UrlencodeRepresentable: Encodable {
+
+    associatedtype CodingKeyType: UrlencodeCodingKeys
+    
+    func getFormUrlEncoded() -> Data?
+}
+
+extension UrlencodeRepresentable {
+    
+    func getFormUrlEncoded() -> Data? {
+
+        let type = Mirror(reflecting: self)
+        
+        var queryItems: [URLQueryItem] = []
+
+        for child in type.children {
+            
+            guard let label = child.label else { continue }
+            
+            guard
+                let convertible = child.value as? CustomStringConvertible,
+                convertible.description.isEmpty == false
+            else { continue }
+            
+            let value = convertible.description
+            
+            let enumCase = CodingKeyType.allCases.first { $0.stringValue == label }
+            
+            if let key = enumCase?.key {
+                let item = URLQueryItem(name: key, value: value.description)
+                queryItems.append(item)
+            }
+        }
+        
+        var urlComponents = URLComponents()
+        urlComponents.queryItems = queryItems
+        
+        return urlComponents.percentEncodedQuery?.data(using: .utf8)
+    }
+}
+
 public enum HTTPMethod: String {
     case get = "GET"
     case post = "POST"
@@ -24,9 +70,9 @@ public protocol HTTPRequest {
     
     var queryParams: [URLQueryItem]? { get }
     
-    var encoder: JSONEncoder? { get }
+    var retry: Int { get }
     
-    var decoder: JSONDecoder? { get }
+    var urlEncode: (any UrlencodeRepresentable)? { get }
 }
 
 public extension HTTPRequest {
@@ -37,7 +83,7 @@ public extension HTTPRequest {
     
     var headers: [String: String]? { ["Content-Type": "application/json"] }
     
-    var encoder: JSONEncoder? { JSONEncoder() }
+    var retry: Int { 0 }
     
-    var decoder: JSONDecoder? { JSONDecoder() }
+    var urlEncode: (any UrlencodeRepresentable)? { nil }
 }

@@ -1,5 +1,5 @@
 import XCTest
-@testable import HTTPClient
+@testable import Networking
 
 @available(macOS 14.0, *)
 final class CommentsAPITests: XCTestCase {
@@ -19,7 +19,7 @@ final class CommentsAPITests: XCTestCase {
     }
     
     func testDeleteSuccess() async throws {
-        try await sut.executeVoid(httpRequest: CommentHTTPRequest.delete(commnetId: 1))
+        let _: EmptyResponse = try await sut.execute(httpRequest: CommentHTTPRequest.delete(commnetId: 1))
     }
     
     func testAddSuccess() async throws {

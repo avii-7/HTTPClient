@@ -7,7 +7,7 @@
 
 import XCTest
 import Foundation
-@testable import HTTPClient
+@testable import Networking
 
 final class MultipartAPITests: XCTestCase {
 

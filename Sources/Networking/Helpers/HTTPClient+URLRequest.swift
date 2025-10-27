@@ -23,7 +23,7 @@ internal extension HTTPClient {
                 urlRequest.httpBody = try encoder.encode(postBody)
             }
             
-            debugPrint("📡 cURL Request:\n\(urlRequest)")
+            debugPrint("📡 Request:\n\(urlRequest)")
             return urlRequest
         }
         catch {

@@ -6,7 +6,7 @@
 //
 
 import Foundation
-@testable import HTTPClient
+@testable import Networking
 
 enum CommentHTTPRequest: HTTPRequest {
     
